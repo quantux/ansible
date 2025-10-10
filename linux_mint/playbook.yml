@@ -2,10 +2,14 @@
 - name: Pós-instalação Linux Mint
   hosts: localhost
   gather_facts: yes
+  become: false
+
+  vars_prompt:
+    - name: restic_password
+      prompt: "Digite a senha do repositório Restic"
+      private: yes
 
   vars:
-    ubuntu_codename: "focal"
-    linuxmint_codename: "ulyana"
     docker_compose_path: "{{ ansible_env.HOME }}/.scripts/docker-apps/docker-compose.yml"
     restic_repo: "/media/restic/restic_notebook_repo"
     pacotes_apt: "{{ lookup('file','pacotes_apt.txt').splitlines() }}"
@@ -14,58 +18,61 @@
   tasks:
 
     - name: Verifica se restic está instalado
-      command: restic version
+      ansible.builtin.command: restic version
       ignore_errors: yes
       register: restic_check
 
     - name: Falha se Restic não estiver instalado
-      fail:
+      ansible.builtin.fail:
         msg: "Restic não está instalado!"
       when: restic_check.rc != 0
 
     - name: Restaurar backup Restic
-      command: restic -r {{ restic_repo }} restore latest --target / --tag mths --tag linux_mint
+      ansible.builtin.command:
+        cmd: restic -r {{ restic_repo }} restore latest --target / --tag mths --tag linux_mint
+      environment:
+        RESTIC_PASSWORD: "{{ restic_password }}"
 
     - name: Fazer backup do arquivo de mirrors
       become: true
-      copy:
+      ansible.builtin.copy:
         src: /etc/apt/sources.list.d/official-package-repositories.list
         dest: /etc/apt/sources.list.d/official-package-repositories.list.disabled
         remote_src: yes
 
     - name: Substituir URL do repositório Linux Mint
       become: true
-      replace:
+      ansible.builtin.replace:
         path: /etc/apt/sources.list.d/official-package-repositories.list
         regexp: '^(deb\s+)http://packages\.linuxmint\.com'
         replace: '\1https://mint-packages.c3sl.ufpr.br'
 
     - name: Substituir URL dos repositórios Ubuntu
       become: true
-      replace:
+      ansible.builtin.replace:
         path: /etc/apt/sources.list.d/official-package-repositories.list
         regexp: '^(deb\s+)http://archive\.ubuntu\.com/ubuntu'
         replace: '\1http://sft.if.usp.br/ubuntu'
 
     - name: Habilitar arquitetura i386
       become: true
-      command: dpkg --add-architecture i386
+      ansible.builtin.command: dpkg --add-architecture i386
 
     - name: Atualizar repositórios e pacotes
       become: true
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
         upgrade: dist
 
     - name: Instalar pacotes apt
       become: true
-      apt:
+      ansible.builtin.apt:
         name: "{{ pacotes_apt }}"
         state: present
 
-    - name: Instalar pacotes Flatpak
+    - name: Instalar pacotes Flatpak (como root)
       become: true
-      flatpak:
+      community.general.flatpak:
         name: "{{ item }}"
         state: present
         remote: flathub
