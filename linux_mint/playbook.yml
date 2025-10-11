@@ -37,11 +37,24 @@
       loop: "{{ pacotes_flatpak }}"
       become: true
 
-    - name: Instalar Docker se não estiver presente
-      ansible.builtin.shell: curl -fsSL https://get.docker.com | sh
-      args:
-        warn: false
+    - name: Verificar se Docker está instalado
+      ansible.builtin.command: which docker
+      register: docker_instalado
       ignore_errors: yes
+
+    - name: Baixar script de instalação do Docker
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+        mode: '0755'
+      when: docker_instalado.rc != 0
+      become: true
+
+    - name: Executar script de instalação do Docker
+      ansible.builtin.shell: /tmp/get-docker.sh
+      args:
+        executable: /bin/bash
+      when: docker_instalado.rc != 0
       become: true
 
     - name: Adicionar usuário atual ao grupo docker
