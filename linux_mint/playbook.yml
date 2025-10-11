@@ -58,6 +58,7 @@
             path: /var/log/restic_restore_done
             state: touch
           when: restic_restore is changed
+          become: true
 
     # ----------------------------
     # TAREFAS ADMINISTRATIVAS (ROOT)
@@ -115,6 +116,18 @@
         name: "{{ ansible_user_id }}"
         groups: docker
         append: yes
+      become: true
+
+    - name: Fazer pull apenas das imagens apache e nginx
+      ansible.builtin.command:
+        cmd: >
+          docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml pull
+      become: true
+
+    - name: Subir containers syncthing e stirling-pdf
+      ansible.builtin.command:
+        cmd: >
+          docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml up -d syncthing stirling-pdf
       become: true
 
     # ----------------------------
@@ -193,26 +206,6 @@
       ansible.builtin.shell: /tmp/tailscale_install.sh
       become: true
 
-    - name: Definir zsh como shell padrão
-      ansible.builtin.user:
-        name: "{{ ansible_user_id }}"
-        shell: /usr/bin/zsh
-      become: true
-
-    # ----------------------------
-    # DOCKER-COMPOSE E CONFIGURAÇÕES DE USUÁRIO
-    # ----------------------------
-
-    - name: Fazer pull apenas das imagens apache e nginx
-      ansible.builtin.command:
-        cmd: >
-          docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml pull
-
-    - name: Subir containers syncthing e stirling-pdf
-      ansible.builtin.command:
-        cmd: >
-          docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml up -d syncthing stirling-pdf
-
     - name: Atualizar tldr usando zsh com ativação do venv
       ansible.builtin.shell: |
         source /home/mths/.scripts/python3-venv/bin/activate
@@ -226,3 +219,9 @@
 
     - name: Configurar qBittorrent como app padrão de magnet
       ansible.builtin.command: xdg-mime default org.qbittorrent.qBittorrent.desktop x-scheme-handler/magnet
+
+    - name: Definir zsh como shell padrão
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        shell: /usr/bin/zsh
+      become: true
