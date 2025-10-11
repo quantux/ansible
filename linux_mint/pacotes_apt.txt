@@ -26,8 +26,6 @@ tmux
 vim
 neovim
 gedit
-fonts-firacode
-fonts-powerline
 gparted
 sox
 ffmpeg
@@ -103,4 +101,7 @@ fio
 nasm
 chromium
 clonezilla
-
+fonts-roboto
+fonts-firacode
+fonts-powerline
+fonts-noto
