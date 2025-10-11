@@ -1,0 +1,23 @@
+---
+- name: Atualizar repositórios e pacotes
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Habilitar arquitetura i386
+  ansible.builtin.command: dpkg --add-architecture i386
+
+- name: Instalar pacotes apt
+  ansible.builtin.apt:
+    name: "{{ pacotes_apt }}"
+    state: present
+    update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Instalar pacotes Flatpak
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+    remote: flathub
+  loop: "{{ pacotes_flatpak }}"

@@ -1,0 +1,3 @@
+restic_repo: "/media/restic/restic_notebook_repo"
+pacotes_apt: "{{ lookup('file', '{{ playbook_dir }}/packages/apt/packages.txt').splitlines() }}"
+pacotes_flatpak: "{{ lookup('file', '{{ playbook_dir }}/packages/flatpak/packages.txt').splitlines() }}"

@@ -1,0 +1,44 @@
+---
+- name: Verifica se Restic está instalado
+  ansible.builtin.package:
+    name: restic
+    state: present
+
+- name: Verifica marcador de restauração
+  ansible.builtin.stat:
+    path: /var/log/restic_restore_done
+  register: restic_restore_marker
+
+- name: Digite a senha do Restic
+  ansible.builtin.pause:
+    prompt: "Digite a senha do repositório Restic:"
+    echo: no
+  register: restic_password_input
+  when: not restic_restore_marker.stat.exists
+
+- name: Definir variável de senha
+  ansible.builtin.set_fact:
+    restic_password: "{{ restic_password_input.user_input | default('') }}"
+  when: restic_password_input is defined
+
+- name: Restaurar backup Restic
+  ansible.builtin.command:
+    cmd: >
+      restic -r {{ restic_repo }} restore latest
+      --target /
+      --tag mths
+      --tag linux_mint
+  environment:
+    RESTIC_PASSWORD: "{{ restic_password }}"
+  when:
+    - not restic_restore_marker.stat.exists
+    - restic_password is defined
+    - restic_password | length > 0
+  register: restic_restore
+  changed_when: restic_restore.rc == 0
+
+- name: Criar marcador de restauração concluída
+  ansible.builtin.file:
+    path: /var/log/restic_restore_done
+    state: touch
+  when: restic_restore is changed
