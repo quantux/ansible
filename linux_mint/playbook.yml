@@ -4,6 +4,11 @@
   gather_facts: yes
   become: true
 
+  vars_prompt:
+    - name: "ansible_become_pass"
+      prompt: "Digite a senha sudo para o usuário atual"
+      private: yes
+
   roles:
     - restic
     - system
