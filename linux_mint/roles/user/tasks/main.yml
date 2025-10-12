@@ -3,6 +3,7 @@
   ansible.builtin.lineinfile:
     path: /etc/environment
     line: "SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS=0"
+  become: true
 
 - name: Baixar e instalar TeamViewer
   block:
@@ -12,12 +13,14 @@
     - ansible.builtin.apt:
         deb: /tmp/teamviewer.deb
         state: present
+  become: true
 
 - name: Baixar e instalar oh-my-posh
   ansible.builtin.get_url:
     url: "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
     dest: /usr/local/bin/oh-my-posh
     mode: '0755'
+  become: true
 
 - name: Baixar script Tailscale
   ansible.builtin.get_url:
@@ -27,6 +30,7 @@
 
 - name: Executar script Tailscale
   ansible.builtin.shell: /tmp/tailscale_install.sh
+  become: true
 
 - name: Atualizar tldr usando zsh com ativação do venv
   ansible.builtin.shell: |

@@ -3,9 +3,11 @@
   ansible.builtin.apt:
     update_cache: yes
     upgrade: dist
+  become: true
 
 - name: Habilitar arquitetura i386
   ansible.builtin.command: dpkg --add-architecture i386
+  become: true
 
 - name: Instalar pacotes apt
   ansible.builtin.apt:
@@ -14,6 +16,7 @@
     update_cache: yes
   environment:
     DEBIAN_FRONTEND: noninteractive
+  become: true
 
 - name: Instalar pacotes Flatpak
   community.general.flatpak:
@@ -21,3 +24,4 @@
     state: present
     remote: flathub
   loop: "{{ pacotes_flatpak }}"
+  become: true

@@ -4,18 +4,21 @@
     src: "./assets/themes/Adapta-Nokto.tar.xz"
     dest: "/usr/share/themes"
     remote_src: yes
+  become: true
 
 - name: Instalar tema Flat-Remix-GTK-Blue-Darkest
   ansible.builtin.unarchive:
     src: "./assets/themes/Flat-Remix-GTK-Blue-Darkest-Solid-NoBorder.tar.xz"
     dest: "/usr/share/themes"
     remote_src: yes
+  become: true
 
 - name: Instalar ícones La-Capitaine
   ansible.builtin.unarchive:
     src: "./assets/icons/la-capitaine.tar.xz"
     dest: "/usr/share/icons/"
     remote_src: yes
+  become: true
 
 - name: Baixar FiraCode Nerd Font
   ansible.builtin.get_url:
@@ -28,3 +31,4 @@
     src: /tmp/firacode.zip
     dest: /usr/share/fonts/
     remote_src: yes
+  become: true

@@ -2,7 +2,6 @@
 - name: Pós-instalação Linux Mint completa
   hosts: localhost
   gather_facts: yes
-  become: true
 
   roles:
     - restic

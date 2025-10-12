@@ -16,19 +16,23 @@
   args:
     executable: /bin/bash
   when: docker_instalado.rc != 0
+  become: true
 
 - name: Adicionar usuário atual ao grupo docker
   ansible.builtin.user:
     name: "{{ ansible_user_id }}"
     groups: docker
     append: yes
+  become: true
 
 - name: Fazer pull apenas das imagens apache e nginx
   ansible.builtin.command:
     cmd: >
       docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml pull
+  become: true
 
 - name: Subir containers syncthing e stirling-pdf
   ansible.builtin.command:
     cmd: >
       docker compose -f {{ ansible_user_dir }}/.scripts/docker-apps/docker-compose.yml up -d syncthing stirling-pdf
+  become: true

@@ -36,9 +36,11 @@
     - restic_password | length > 0
   register: restic_restore
   changed_when: restic_restore.rc == 0
+  become: true
 
 - name: Criar marcador de restauração concluída
   ansible.builtin.file:
     path: /var/log/restic_restore_done
     state: touch
   when: restic_restore is changed
+  become: true
