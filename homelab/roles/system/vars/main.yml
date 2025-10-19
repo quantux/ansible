@@ -1,0 +1,28 @@
+# Repositório Restic
+restic_repo: "{{ ansible_user_dir }}/restic/restic_homelab_repo"
+
+# Pacotes APT
+pacotes_apt: "{{ lookup('file', playbook_dir + '/packages/apt/packages.txt').splitlines() }}"
+
+# Variáveis de LUKS e criptografia
+luks_file: "{{ ansible_user_dir }}/.encrypted"
+luks_name: "encrypted_volume"
+encrypted_folder: "{{ ansible_user_dir }}/encrypted"
+encrypted_videos_folder: "{{ encrypted_folder }}/Vídeos"
+key_file: "/root/.enc"
+luks_size: "{{ (ansible_mounts | selectattr('mount', 'equalto','/') | first).size_available | int - 10 * 1024 * 1024 * 1024 }}"
+
+# Variáveis Git
+git_name: "Matheus Faria"
+git_email: "mths.faria@outlook.com"
+git_credentials_path: "{{ encrypted_folder }}/.git-credentials"
+
+# Docker
+docker_compose_path: "{{ encrypted_folder }}/docker-apps/docker-compose.yml"
+
+# Interface Ethernet detectada automaticamente
+ethernet_interface: >-
+  {{ ansible_facts['interfaces'] 
+     | reject('match', '^lo$|^vir|^docker|^veth') 
+     | list 
+     | first }}

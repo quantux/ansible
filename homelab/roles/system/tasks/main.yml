@@ -1,0 +1,107 @@
+---
+- name: Atualizar repositórios e pacotes
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+  become: true
+
+- name: Instalar pacotes apt
+  ansible.builtin.apt:
+    name: "{{ pacotes_apt }}"
+    state: present
+    update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  become: true
+
+# importa todas as tarefas LUKS
+- import_tasks: luks.yml
+
+- name: Baixar script Tailscale
+  ansible.builtin.get_url:
+    url: https://tailscale.com/install.sh
+    dest: /tmp/tailscale_install.sh
+    mode: '0755'
+
+- name: Executar script Tailscale
+  ansible.builtin.shell: /tmp/tailscale_install.sh
+  become: true
+
+- name: Adicionar usuário atual ao grupo sudo
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: sudo
+    append: yes
+  become: true
+
+# Configura GRUB
+- import_tasks: grub.yml
+
+- name: Configurar interface ethernet para iniciar automaticamente com DHCP
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    regexp: "^auto {{ ethernet_interface }}"
+    line: |
+      auto {{ ethernet_interface }}
+      iface {{ ethernet_interface }} inet dhcp
+    insertafter: EOF
+    state: present
+  become: true
+
+- name: Configurar SSH
+  block:
+    - name: Desabilitar autenticação por senha
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*PasswordAuthentication\s+.*'
+        line: 'PasswordAuthentication no'
+        backup: yes
+
+    - name: Desabilitar PAM
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*UsePAM\s+.*'
+        line: 'UsePAM no'
+        backup: yes
+
+    - name: Desabilitar ChallengeResponseAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*ChallengeResponseAuthentication\s+.*'
+        line: 'ChallengeResponseAuthentication no'
+        backup: yes
+
+    - name: Habilitar PubkeyAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*PubkeyAuthentication\s+.*'
+        line: 'PubkeyAuthentication yes'
+        backup: yes
+
+    - name: Reiniciar serviço SSH
+      service:
+        name: ssh
+        state: restarted
+  become: true
+
+- name: Configurar comportamento da tampa (lid)
+  block:
+    - name: Ajustar HandleLidSwitch
+      lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^#?HandleLidSwitch=.*'
+        line: 'HandleLidSwitch=ignore'
+        backup: yes
+
+    - name: Ajustar HandleLidSwitchDocked
+      lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^#?HandleLidSwitchDocked=.*'
+        line: 'HandleLidSwitchDocked=ignore'
+        backup: yes
+
+    - name: Reiniciar systemd-logind
+      service:
+        name: systemd-logind
+        state: restarted
+  become: true

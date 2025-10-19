@@ -1,0 +1,11 @@
+---
+- name: Pós-instalação Homelab
+  hosts: localhost
+  gather_facts: yes
+
+  roles:
+    - restic
+    - system
+    - docker
+    - themes
+    - user

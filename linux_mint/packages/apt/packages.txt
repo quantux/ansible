@@ -105,3 +105,6 @@ fonts-roboto
 fonts-firacode
 fonts-powerline
 fonts-noto
+memtester
+stress-ng
+

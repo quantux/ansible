@@ -1,0 +1,33 @@
+---
+- name: Verificar se Docker está instalado
+  ansible.builtin.command: which docker
+  register: docker_instalado
+  ignore_errors: yes
+
+- name: Baixar script de instalação do Docker
+  ansible.builtin.get_url:
+    url: https://get.docker.com
+    dest: /tmp/get-docker.sh
+    mode: '0755'
+  when: docker_instalado.rc != 0
+
+- name: Executar script de instalação do Docker
+  ansible.builtin.shell: /tmp/get-docker.sh
+  args:
+    executable: /bin/bash
+  when: docker_instalado.rc != 0
+  become: true
+
+- name: Adicionar usuário atual ao grupo docker
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: docker
+    append: yes
+  become: true
+
+- name: Subir containers via docker_compose
+  community.docker.docker_compose:
+    project_src: "{{ docker_compose_path }}"
+    state: present
+    restarted: yes
+  become: true

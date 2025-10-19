@@ -1,0 +1,63 @@
+---
+# tarefas LUKS
+- name: Criar chave privada para LUKS se não existir
+  ansible.builtin.command:
+    cmd: head -c 64 /dev/random > "{{ key_file }}"
+    creates: "{{ key_file }}"
+  become: true
+
+- name: Criar arquivo LUKS se não existir
+  ansible.builtin.command:
+    cmd: "dd if=/dev/zero of={{ luks_file }} bs=1 count=0 seek={{ luks_size }}"
+    creates: "{{ luks_file }}"
+  become: true
+
+- name: Formatar LUKS
+  ansible.builtin.command:
+    cmd: "cryptsetup luksFormat --batch-mode {{ luks_file }} {{ key_file }}"
+    creates: "/dev/mapper/{{ luks_name }}"
+  become: true
+
+- name: Abrir LUKS
+  ansible.builtin.command:
+    cmd: "cryptsetup luksOpen {{ luks_file }} {{ luks_name }} --key-file {{ key_file }}"
+  become: true
+
+- name: Criar filesystem ext4 no volume LUKS
+  ansible.builtin.filesystem:
+    fstype: ext4
+    dev: "/dev/mapper/{{ luks_name }}"
+  become: true
+
+- name: Montar volume LUKS
+  ansible.builtin.mount:
+    path: "{{ encrypted_folder }}"
+    src: "/dev/mapper/{{ luks_name }}"
+    fstype: ext4
+    state: mounted
+  become: true
+
+- name: Criar swap dentro do volume LUKS
+  ansible.builtin.command:
+    cmd: |
+      dd if=/dev/zero of={{ encrypted_folder }}/.swap bs=1M count=4096
+      chmod 600 {{ encrypted_folder }}/.swap
+      mkswap {{ encrypted_folder }}/.swap
+      swapon {{ encrypted_folder }}/.swap
+    creates: "{{ encrypted_folder }}/.swap"
+  become: true
+
+- name: Ajustar permissões do diretório LUKS
+  ansible.builtin.file:
+    path: "{{ encrypted_folder }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+  become: true
+
+- name: Ajustar permissões recursivamente em /mnt
+  ansible.builtin.file:
+    path: /mnt
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    recurse: yes
+  become: true
